@@ -212,6 +212,11 @@ bool pass_arguments_by_reference(const std::string& str, const bool& b, const sh
     return true;
 }
 
+std::vector<unsigned char> array_of_char(const std::vector<unsigned char>& vec) {
+    JAVA_OUTPUT << vec << std::endl;
+    return { 'a', 'b', 'c', 'd', 'e', 'f' };
+}
+
 std::vector<int> array_of_int(const std::vector<int>& vec) {
     JAVA_OUTPUT << vec << std::endl;
     return { 0, 1, 2, 3, 4, 5, 6 };
@@ -331,6 +336,7 @@ JAVA_EXTENSION_MODULE() {
         .function<pass_arguments_by_reference>("pass_arguments_by_reference")
 
         // collections
+        .function<array_of_char>("array_of_char")
         .function<array_of_int>("array_of_int")
         .function<array_of_string>("array_of_string")
         .function<list_of_int>("list_of_int")

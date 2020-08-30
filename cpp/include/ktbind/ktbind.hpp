@@ -643,8 +643,8 @@ namespace java {
         }
     };
 
-    template <>
-    struct ArgType<int8_t> : FundamentalArgType<int8_t, jbyte> {
+    template <typename T>
+    struct CharArgType : FundamentalArgType<T, jbyte> {
         constexpr static std::string_view class_name = "java/lang/Byte";
         constexpr static std::string_view kotlin_type = "Byte";
         constexpr static std::string_view type_sig = "B";
@@ -653,23 +653,27 @@ namespace java {
             return env->GetByteField(obj, fld.ref());
         }
 
-        static void java_field_value(JNIEnv* env, jobject obj, Field& fld, native_type value) {
+        static void java_field_value(JNIEnv* env, jobject obj, Field& fld, T value) {
             env->SetByteField(obj, fld.ref(), java_value(env, value));
         }
 
-        static void native_array_value(JNIEnv* env, jarray arr, native_type* ptr, std::size_t len) {
-            env->GetByteArrayRegion(static_cast<jbyteArray>(arr), 0, len, ptr);
+        static void native_array_value(JNIEnv* env, jarray arr, T* ptr, std::size_t len) {
+            env->GetByteArrayRegion(static_cast<jbyteArray>(arr), 0, len, reinterpret_cast<jbyte*>(ptr));
         }
 
-        static jarray java_array_value(JNIEnv* env, const native_type* ptr, std::size_t len) {
+        static jarray java_array_value(JNIEnv* env, const T* ptr, std::size_t len) {
             jbyteArray arr = env->NewByteArray(len);
             if (arr == nullptr) {
                 throw JavaException(env);
             }
-            env->SetByteArrayRegion(arr, 0, len, ptr);
+            env->SetByteArrayRegion(arr, 0, len, reinterpret_cast<const jbyte*>(ptr));
             return arr;
         }
     };
+
+    template <> struct ArgType<char> : CharArgType<char> {};
+    template <> struct ArgType<signed char> : CharArgType<signed char> {};
+    template <> struct ArgType<unsigned char> : CharArgType<unsigned char> {};
 
     template <>
     struct ArgType<uint16_t> : FundamentalArgType<uint16_t, jchar> {
@@ -1047,7 +1051,9 @@ namespace java {
     template <typename T>
     struct ArgType<std::vector<T>> : ListArgType<std::vector<T>, T> {};
 
-    template <> struct ArgType<std::vector<int8_t>> : FundamentalArgArrayType<int8_t> {};
+    template <> struct ArgType<std::vector<char>> : FundamentalArgArrayType<char> {};
+    template <> struct ArgType<std::vector<signed char>> : FundamentalArgArrayType<signed char> {};
+    template <> struct ArgType<std::vector<unsigned char>> : FundamentalArgArrayType<unsigned char> {};
     template <> struct ArgType<std::vector<uint16_t>> : FundamentalArgArrayType<uint16_t> {};
     template <> struct ArgType<std::vector<short>> : FundamentalArgArrayType<short> {};
     template <> struct ArgType<std::vector<int>> : FundamentalArgArrayType<int> {};

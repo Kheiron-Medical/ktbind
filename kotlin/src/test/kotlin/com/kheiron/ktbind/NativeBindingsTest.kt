@@ -54,6 +54,7 @@ class Sample private constructor() : NativeObject() {
         @JvmStatic external fun returns_string(): String
         @JvmStatic external fun pass_arguments_by_value(str: String, b: Boolean, s: Short, i: Int, l: Long, i16: Short, i32: Int, i64: Long, f: Float, d: Double): Boolean
         @JvmStatic external fun pass_arguments_by_reference(str: String, b: Boolean, s: Short, i: Int, l: Long, i16: Short, i32: Int, i64: Long, f: Float, d: Double): Boolean
+        @JvmStatic external fun array_of_char(list: ByteArray): ByteArray
         @JvmStatic external fun array_of_int(list: IntArray): IntArray
         @JvmStatic external fun array_of_string(list: List<String>): List<String>
         @JvmStatic external fun list_of_int(list: List<Int>): List<Int>
@@ -148,6 +149,9 @@ internal class NativeBindingsTest {
 
     @Test
     fun `passing and returning collections`() {
+        assertPrints("[$, a, b, c]") {
+            assertArrayEquals(charArrayOf('a', 'b', 'c', 'd', 'e', 'f').map { it.toByte() }.toByteArray(), Sample.array_of_char(byteArrayOf('$'.toByte(), 'a'.toByte(), 'b'.toByte(), 'c'.toByte())))
+        }
         assertPrints("[0, 0, 1, 1, 2, 3, 5, 8, 13]") {
             assertArrayEquals(intArrayOf(0, 1, 2, 3, 4, 5, 6), Sample.array_of_int(intArrayOf(0, 0, 1, 1, 2, 3, 5, 8, 13)))
         }
