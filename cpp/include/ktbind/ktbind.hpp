@@ -561,8 +561,13 @@ namespace java {
         constexpr static std::string_view class_type_prefix = "L";
         constexpr static std::string_view class_type_suffix = ";";
 
-        /** Used in looking up the appropriate `valueOf` function to instantiate object wrappers of values of a primitive type. */
+        /** Used in looking up the appropriate `valueOf()` function to instantiate object wrappers of values of a primitive type. */
         constexpr static std::string_view value_initializer = join_v<lparen, ArgType<T>::type_sig, rparen, class_type_prefix, ArgType<T>::class_name, class_type_suffix>;
+
+        /** Used in looking up the appropriate `primitiveValue()` function to fetch the primitive type (e.g. `intValue()` for `int`). */
+        constexpr static std::string_view get_value_func_suffix = "Value";
+        constexpr static std::string_view get_value_func = join_v<ArgType<T>::primitive_type, get_value_func_suffix>;
+        constexpr static std::string_view get_value_func_sig = join_v<lparen, rparen, ArgType<T>::type_sig>;
 
     public:
         static T native_value(JNIEnv*, J value) {
@@ -587,8 +592,8 @@ namespace java {
          */
         static J java_unbox(JNIEnv* env, jobject obj) {
             LocalClassRef cls(env, obj);
-            Field field = cls.getField("value", ArgType<T>::type_sig.data());
-            return ArgType<T>::java_raw_field_value(env, obj, field);
+            Method getValue = cls.getMethod(get_value_func.data(), get_value_func_sig);
+            return ArgType<T>::java_call_method(env, obj, getValue);
         }
 
         /**
@@ -616,8 +621,13 @@ namespace java {
     template <>
     struct ArgType<bool> : FundamentalArgType<bool, jboolean> {
         constexpr static std::string_view class_name = "java/lang/Boolean";
+        constexpr static std::string_view primitive_type = "boolean";
         constexpr static std::string_view kotlin_type = "Boolean";
         constexpr static std::string_view type_sig = "Z";
+
+        static jboolean java_call_method(JNIEnv* env, jobject obj, Method& m) {
+            return env->CallBooleanMethod(obj, m.ref());
+        }
 
         static jboolean java_raw_field_value(JNIEnv* env, jobject obj, Field& fld) {
             return env->GetBooleanField(obj, fld.ref());
@@ -646,8 +656,13 @@ namespace java {
     template <typename T>
     struct CharArgType : FundamentalArgType<T, jbyte> {
         constexpr static std::string_view class_name = "java/lang/Byte";
+        constexpr static std::string_view primitive_type = "byte";
         constexpr static std::string_view kotlin_type = "Byte";
         constexpr static std::string_view type_sig = "B";
+
+        static jbyte java_call_method(JNIEnv* env, jobject obj, Method& m) {
+            return env->CallByteMethod(obj, m.ref());
+        }
 
         static jbyte java_raw_field_value(JNIEnv* env, jobject obj, Field& fld) {
             return env->GetByteField(obj, fld.ref());
@@ -678,8 +693,13 @@ namespace java {
     template <>
     struct ArgType<uint16_t> : FundamentalArgType<uint16_t, jchar> {
         constexpr static std::string_view class_name = "java/lang/Character";
+        constexpr static std::string_view primitive_type = "char";
         constexpr static std::string_view kotlin_type = "Char";
         constexpr static std::string_view type_sig = "C";
+
+        static jchar java_call_method(JNIEnv* env, jobject obj, Method& m) {
+            return env->CallCharMethod(obj, m.ref());
+        }
 
         static jchar java_raw_field_value(JNIEnv* env, jobject obj, Field& fld) {
             return env->GetCharField(obj, fld.ref());
@@ -706,8 +726,13 @@ namespace java {
     template <>
     struct ArgType<short> : FundamentalArgType<short, jshort> {
         constexpr static std::string_view class_name = "java/lang/Short";
+        constexpr static std::string_view primitive_type = "short";
         constexpr static std::string_view kotlin_type = "Short";
         constexpr static std::string_view type_sig = "S";
+
+        static jshort java_call_method(JNIEnv* env, jobject obj, Method& m) {
+            return env->CallShortMethod(obj, m.ref());
+        }
 
         static jshort java_raw_field_value(JNIEnv* env, jobject obj, Field& fld) {
             return env->GetShortField(obj, fld.ref());
@@ -736,8 +761,13 @@ namespace java {
         static_assert(sizeof(T) == 4, "32-bit integer type required.");
 
         constexpr static std::string_view class_name = "java/lang/Integer";
+        constexpr static std::string_view primitive_type = "int";
         constexpr static std::string_view kotlin_type = "Int";
         constexpr static std::string_view type_sig = "I";
+
+        static jint java_call_method(JNIEnv* env, jobject obj, Method& m) {
+            return env->CallIntMethod(obj, m.ref());
+        }
 
         static jint java_raw_field_value(JNIEnv* env, jobject obj, Field& fld) {
             return env->GetIntField(obj, fld.ref());
@@ -768,8 +798,13 @@ namespace java {
         static_assert(sizeof(T) == 8, "64-bit integer type required.");
 
         constexpr static std::string_view class_name = "java/lang/Long";
+        constexpr static std::string_view primitive_type = "long";
         constexpr static std::string_view kotlin_type = "Long";
         constexpr static std::string_view type_sig = "J";
+
+        static jlong java_call_method(JNIEnv* env, jobject obj, Method& m) {
+            return env->CallLongMethod(obj, m.ref());
+        }
 
         static jlong java_raw_field_value(JNIEnv* env, jobject obj, Field& fld) {
             return env->GetLongField(obj, fld.ref());
@@ -827,10 +862,15 @@ namespace java {
     template <>
     struct ArgType<float> : FundamentalArgType<float, jfloat> {
         constexpr static std::string_view class_name = "java/lang/Float";
+        constexpr static std::string_view primitive_type = "float";
         constexpr static std::string_view kotlin_type = "Float";
         constexpr static std::string_view type_sig = "F";
 
-        static java_type java_raw_field_value(JNIEnv* env, jobject obj, Field& fld) {
+        static jfloat java_call_method(JNIEnv* env, jobject obj, Method& m) {
+            return env->CallFloatMethod(obj, m.ref());
+        }
+
+        static jfloat java_raw_field_value(JNIEnv* env, jobject obj, Field& fld) {
             return env->GetFloatField(obj, fld.ref());
         }
 
@@ -855,10 +895,15 @@ namespace java {
     template <>
     struct ArgType<double> : FundamentalArgType<double, jdouble> {
         constexpr static std::string_view class_name = "java/lang/Double";
+        constexpr static std::string_view primitive_type = "double";
         constexpr static std::string_view kotlin_type = "Double";
         constexpr static std::string_view type_sig = "D";
 
-        static java_type java_raw_field_value(JNIEnv* env, jobject obj, Field& fld) {
+        static jdouble java_call_method(JNIEnv* env, jobject obj, Method& m) {
+            return env->CallDoubleMethod(obj, m.ref());
+        }
+
+        static jdouble java_raw_field_value(JNIEnv* env, jobject obj, Field& fld) {
             return env->GetDoubleField(obj, fld.ref());
         }
 
@@ -1338,7 +1383,7 @@ namespace java {
         static std::function<R(Args...)> native_value(JNIEnv* env, jobject value) {
             GlobalObjectRef fun = GlobalObjectRef(env, value);
             LocalClassRef cls(env, fun.ref());
-            Method invoke = cls.getMethod("invoke", invoke_sig.data());  // lifecycle bound to object reference
+            Method invoke = cls.getMethod("invoke", invoke_sig);  // lifecycle bound to object reference
             return [fun = std::move(fun), invoke = std::move(invoke)](Args... args) -> R {
                 // retrieve an environment reference (which may not be the same as when the function object was created)
                 JNIEnv* env = this_thread.getEnv();
