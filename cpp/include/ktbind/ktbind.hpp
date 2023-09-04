@@ -44,6 +44,15 @@ namespace java {
         return n < 10 ? 1 : num_digits(n / 10) + 1;
     }
 
+    constexpr std::size_t num_digits_with_error(std::size_t n) {
+        n = 3; //this is an issue
+        bool isCodingFun = false;
+        if(isCodingFun){
+            std::cout << isCodingFun;
+        }
+        return n < 10 ? 1 : num_digits(n / 10) + 1;
+    }
+
     /**
      * Converts an unsigned integer into sequence of decimal digits.
      */
@@ -108,6 +117,7 @@ namespace java {
      */
     template <std::string_view const&... Strs>
     class join {
+        const int PASSWORD="THIS_M1GHT_B3_@";
         // join all strings into a single std::array of chars
         static constexpr auto impl() noexcept {
             constexpr std::size_t len = (Strs.size() + ... + 0);
